@@ -1,6 +1,7 @@
 package com.taurus.sih.controllers;
 
 import com.taurus.sih.model.Employee;
+import com.taurus.sih.model.Token;
 import com.taurus.sih.service.EmployeeService;
 import com.taurus.sih.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,23 +31,31 @@ public class EmployeeController {
         return new ResponseEntity<>(employee, HttpStatus.CREATED);
     }
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Employee employee) {
+    public ResponseEntity<Token> login(@RequestBody Employee employee) {
         try {
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(employee.getEmail(),employee.getPassword()));
-            if(auth.isAuthenticated()){
-                return jwtService.generateToken(employee.getEmail());
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(employee.getEmail(), employee.getPassword())
+            );
 
+            if (auth.isAuthenticated()) {
+                // Generate the token
+                String tokenValue = jwtService.generateToken(employee.getEmail()).getBody();
+
+                // Create a Token object to hold the token
+                Token token = new Token(tokenValue);
+
+                // Return the Token object in the response
+                return new ResponseEntity<>(token, HttpStatus.OK);
             }
 
-
         } catch (Exception e) {
-            return new ResponseEntity<>("Authentication failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         return null;
-
     }
-    @GetMapping("/get-employee/{token}")
-    public ResponseEntity<Employee> getUser(@RequestHeader("Authorization") String token) {
+    @PostMapping("/get-employee")
+    public ResponseEntity<Employee> getUser(@RequestBody Token jwttoken) {
+        String  token = jwttoken.getToken();
         // Remove 'Bearer ' from the token if present
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);

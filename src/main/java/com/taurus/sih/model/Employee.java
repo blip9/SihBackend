@@ -44,4 +44,7 @@ public class Employee {
     @Column(nullable = false)
     private java.sql.Timestamp createdAt;
 
+    @Column(nullable = true,columnDefinition = "TEXT")
+    private String employeeImage;
+
 }
